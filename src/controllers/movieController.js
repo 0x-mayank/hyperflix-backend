@@ -1,7 +1,7 @@
 const tmdb = require("../config/tmdb");
 
 exports.getTrending = async (req, res) => {
-  const response = await tmdb.get("/trending/movie/week");
+  const response = await tmdb.get("/trending/movie/day");
 
   res.json(response.data.results);
 };

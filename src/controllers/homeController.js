@@ -9,9 +9,9 @@ exports.getHomeData = async (req, res) => {
       popularTV,
       trendingAnime,
     ] = await Promise.all([
-      tmdb.get("/trending/movie/week"),
+      tmdb.get("/trending/movie/day"),
       tmdb.get("/movie/popular"),
-      tmdb.get("/trending/tv/week"),
+      tmdb.get("/trending/tv/day"),
       tmdb.get("/tv/popular"),
       tmdb.get("/discover/tv", {
         params: {
