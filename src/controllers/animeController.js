@@ -12,6 +12,7 @@ const filterAnime = (results) => {
   return results.filter((item) => item.original_language === "ja");
 };
 
+// Get AniList ID from a title search
 const getAnilistId = async (title) => {
   const query = `
     query ($search: String) {
@@ -27,6 +28,64 @@ const getAnilistId = async (title) => {
     { headers: { "Content-Type": "application/json" } }
   );
   return response.data.data.Media.id;
+};
+
+// Get all seasons (base + sequels) from AniList
+const getAnilistSeasons = async (title) => {
+  const query = `
+    query ($search: String) {
+      Media(search: $search, type: ANIME) {
+        id
+        episodes
+        title { romaji english }
+        relations {
+          edges {
+            relationType
+            node {
+              id
+              type
+              episodes
+              seasonYear
+              title { romaji english }
+            }
+          }
+        }
+      }
+    }
+  `;
+  const response = await axios.post(
+    "https://graphql.anilist.co",
+    { query, variables: { search: title } },
+    { headers: { "Content-Type": "application/json" } }
+  );
+
+  const media = response.data.data.Media;
+
+  const sequels = media.relations.edges
+    .filter(
+      (e) =>
+        e.relationType === "SEQUEL" &&
+        e.node.type === "ANIME" &&
+        e.node.episodes > 0
+    )
+    .sort((a, b) => (a.node.seasonYear || 0) - (b.node.seasonYear || 0));
+
+  const seasons = [
+    {
+      season: 1,
+      anilistId: media.id,
+      episodes: media.episodes || 12,
+      title: media.title.english || media.title.romaji,
+    },
+    ...sequels.map((s, i) => ({
+      season: i + 2,
+      anilistId: s.node.id,
+      episodes: s.node.episodes || 12,
+      title: s.node.title.english || s.node.title.romaji,
+    })),
+  ];
+
+  return seasons;
 };
 
 exports.getTrending = async (req, res) => {
@@ -79,22 +138,41 @@ exports.getDetails = async (req, res) => {
   }
 };
 
-exports.getStream = async (req, res) => {
+// GET /api/anime/:id/seasons
+exports.getSeasons = async (req, res) => {
   try {
     const { id } = req.params;
-    const { episode = 1 } = req.query;
 
-    // Step 1: get anime title from TMDB
     const tmdbRes = await tmdb.get(`/tv/${id}`);
     const title = tmdbRes.data.original_name || tmdbRes.data.name;
 
-    // Step 2: get AniList ID from title
-    const anilistId = await getAnilistId(title);
+    const seasons = await getAnilistSeasons(title);
 
-    // Step 3: build Megaplay embed URL
-    const streamUrl = `https://megaplay.buzz/stream/ani/${anilistId}/${episode}/sub`;
+    res.json({ seasons });
+  } catch (error) {
+    console.error("getSeasons error:", error.message);
+    res.status(500).json({ error: "Failed to get anime seasons" });
+  }
+};
 
-    res.json({ streamUrl, anilistId });
+// GET /api/anime/:id/stream?episode=1&anilistId=123
+exports.getStream = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { episode = 1, anilistId } = req.query;
+
+    let resolvedAnilistId = anilistId;
+
+    // If no anilistId passed, fall back to fetching it from title
+    if (!resolvedAnilistId) {
+      const tmdbRes = await tmdb.get(`/tv/${id}`);
+      const title = tmdbRes.data.original_name || tmdbRes.data.name;
+      resolvedAnilistId = await getAnilistId(title);
+    }
+
+    const streamUrl = `https://megaplay.buzz/stream/ani/${resolvedAnilistId}/${episode}/sub`;
+
+    res.json({ streamUrl, anilistId: resolvedAnilistId });
   } catch (error) {
     console.error("getStream error:", error.message);
     res.status(500).json({ error: "Failed to get anime stream" });
