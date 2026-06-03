@@ -1,17 +1,11 @@
 const PLAYER_OPTIONS =
-  "?download=true" +
-  "&audio=true" +
-  "&title=true" +
-  "&setting=true";
+  "?title=true" +
+  "&nextbutton=true";
 
-exports.movieUrl = (id) => {
-  return `https://nhdapi.com/embed/movie/${id}${PLAYER_OPTIONS}`;
+exports.movieUrl = (tmdbId) => {
+  return `https://vidlink.pro/movie/${tmdbId}${PLAYER_OPTIONS}`;
 };
 
-exports.tvUrl = (
-  id,
-  season,
-  episode
-) => {
-  return `https://nhdapi.com/embed/tv/${id}/${season}/${episode}${PLAYER_OPTIONS}`;
+exports.tvUrl = (tmdbId, season, episode) => {
+  return `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}${PLAYER_OPTIONS}`;
 };
