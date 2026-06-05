@@ -1,6 +1,8 @@
 const PLAYER_OPTIONS =
   "?title=true" +
-  "&nextbutton=true";
+  "&nextbutton=true"+
+  "&iconColor=eefdec"+
+  "&player=jw";
 
 exports.movieUrl = (tmdbId) => {
   return `https://vidlink.pro/movie/${tmdbId}${PLAYER_OPTIONS}`;
