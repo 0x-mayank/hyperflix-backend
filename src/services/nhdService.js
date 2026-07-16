@@ -1,12 +1,19 @@
-const PLAYER_OPTIONS =
-  "?title=true" +
-  "&nextbutton=true"+
-  "&iconColor=eefdec";
+const BASE_URL =
+  process.env.PLAYER_BASE_URL;
 
-exports.movieUrl = (tmdbId) => {
-  return `https://vidlink.pro/movie/${tmdbId}${PLAYER_OPTIONS}`;
-};
+const PLAYER_OPTIONS = new URLSearchParams({
+  title: true,
+  poster: true,
+  autoPlay: true,
+  nextButton: true,
+  autoNext: true,
+  theme: "16A085",
+  hideServer: false,
+  fullscreenButton: true,
+}).toString();
 
-exports.tvUrl = (tmdbId, season, episode) => {
-  return `https://vidlink.pro/tv/${tmdbId}/${season}/${episode}${PLAYER_OPTIONS}`;
-};
+exports.movieUrl = (tmdbId) =>
+  `${BASE_URL}/movie/${tmdbId}?${PLAYER_OPTIONS}`;
+
+exports.tvUrl = (tmdbId, season, episode) =>
+  `${BASE_URL}/tv/${tmdbId}/${season}/${episode}?${PLAYER_OPTIONS}`;
